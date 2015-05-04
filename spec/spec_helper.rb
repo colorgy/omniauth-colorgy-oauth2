@@ -1,2 +1,2 @@
-$LOAD_PATH.unshift File.expand_path('../../lib', __FILE__)
-require 'omniauth/colorgy/oauth2'
+require File.join('bundler', 'setup')
+require 'rspec'
