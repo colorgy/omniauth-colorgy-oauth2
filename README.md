@@ -1,4 +1,4 @@
-# OmniAuth Colorgy OAuth2 Strategy
+# OmniAuth Colorgy Strategy [![Build Status](https://travis-ci.org/colorgy/omniauth-colorgy-oauth2.svg?branch=master)](https://travis-ci.org/colorgy/omniauth-colorgy-oauth2)
 
 Strategy to authenticate with Colorgy via OAuth2 in OmniAuth.
 
