@@ -8,6 +8,9 @@ module OmniAuth
 
       CORE_URL = 'https://colorgy.io'
 
+      option :includes, []
+      option :fields, []
+
       option :client_options, {
         :site => CORE_URL,
         :authorize_url => "/oauth/authorize"
@@ -22,7 +25,15 @@ module OmniAuth
       end
 
       def raw_info
-        @raw_info ||= access_token.get('/api/v1/me.json').parsed
+        @raw_info ||= access_token.get("/api/v1/me.json?include=#{includes_url_param}&fields=#{fields_url_param}").parsed
+      end
+
+      def fields_url_param
+        @fields_url_param ||= options[:fields].is_a?(Array) ? options[:fields].join(',') : options[:fields]
+      end
+
+      def includes_url_param
+        @includes_url_param ||= options[:includes].is_a?(Array) ? options[:includes].join(',') : options[:includes]
       end
     end
   end
