@@ -17,11 +17,6 @@ module ColorgyDeviseSSOManager
     sign_out_url
   end
 
-  # Override the destroy_user_session_path to logout from core
-  def destroy_user_session_path
-    sign_out_url
-  end
-
   private
 
   # Getter of the core domain
@@ -34,9 +29,14 @@ module ColorgyDeviseSSOManager
     @@core_url ||= Devise.omniauth_configs[:colorgy].options[:client_options][:site]
   end
 
+  # Getter of the core rsa public key string
+  def core_rsa_public_key_string
+    @@core_rsa_public_key_string ||= ENV['CORE_RSA_PUBLIC_KEY'].gsub(/\\n/, "\n") || Net::HTTP.get(core_domain, '/_rsa.pub')
+  end
+
   # Getter of the core rsa public key
   def core_rsa_public_key
-    @@core_rsa_public_key ||= OpenSSL::PKey::RSA.new(ENV['CORE_RSA_PUBLIC_KEY'].gsub(/\\n/, "\n"))
+    @@core_rsa_public_key ||= OpenSSL::PKey::RSA.new(core_rsa_public_key_string)
   end
 
   # Decode the sign-on status token (sst) string and return a hash
@@ -107,7 +107,7 @@ module ColorgyDeviseSSOManager
 
     # if the user isn't signed in but the sst isn't blank,
     # redirect to core authorize path
-    elsif !sst.blank?
+    elsif !sst.blank? && request.get? && is_navigational_format?
       redirect_to user_omniauth_authorize_path(:colorgy) and return
     end
   end
