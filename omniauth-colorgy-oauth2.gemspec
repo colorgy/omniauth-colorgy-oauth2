@@ -5,7 +5,7 @@ require 'omniauth/colorgy_oauth2/version'
 
 Gem::Specification.new do |spec|
   spec.name          = "omniauth-colorgy-oauth2"
-  spec.version       = OmniAuth::ColorgyOauth2::VERSION
+  spec.version       = OmniAuth::ColorgyOAuth2::VERSION
   spec.authors       = ["Neson"]
   spec.email         = ["neson@dex.tw"]
 
