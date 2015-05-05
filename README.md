@@ -42,7 +42,7 @@ end
 
 ### Devise
 
-First define your application id and secret in `config/initializers/devise.rb`:
+First define your **application id** and **secret** in `config/initializers/devise.rb`:
 
 ```ruby
 config.omniauth :colorgy, "COLORGY_APP_ID", "COLORGY_APP_SECRET"
@@ -102,6 +102,7 @@ Now you can add an login link in your view using:
 <%= link_to "Sign in with Colorgy", user_omniauth_authorize_path(:colorgy) %>
 ```
 
+
 ## Configuration
 
 You can configure several options, which you pass into the provider method: `scope`, `fields`, `includes` and `client_options`.
@@ -121,9 +122,77 @@ config.omniauth :colorgy, ENV['APP_ID'], ENV['APP_SECRET'],
 - `includes`: An array to select includable related data (e.g. `primary_identity`, `organizations`) to be included with the user's infomation. It will be convenient that you won't have to make another API call to get the data.
 - `client_options`: A hash to specify the client configurations. Set this to `{ site: 'https://server.url' }` to change the API server that you want to use.
 
+
+## Single-Sign On/Off (SSO) Support
+
+_(Optional)_
+
+The Colorgy SSO system is implemented using **OAuth 2.0** as the authorization protocol and **Sign-on Status Tokens (SST)** as credential of the sign-on status of the user, achieving sign in and out seamlessly controlled by a central server.
+
+The **Sign-on Status Token (SST)** is stored in an cross-domain cookie (`_sst`) to represent the sign on status of the current user. SSTs are trully [JSON Web Tokens (JWT)](https://tools.ietf.org/html/draft-ietf-oauth-json-web-token) containing identification information, signed by a RSA private key. Clients (other services under this SSO system) will be able to decode and verify the infomation using a corresponding RSA public key, and make reasonable reactions according to the infomation it provided.
+
+This gem has implemented some solutions to cover certain use cases.
+
+
+### Using Devise With Rails: `ColorgyDeviseSSOManager`
+
+> Limitations: since this tactic relys on sharing a cookie accross Colorgy core and your app, your app should be running on a subdomain of Colorgy core to make this work.
+
+First, make sure Devise is setup properly to OmniAuth with Colorgy - clicking the 'Sign in with Colorgy' link will sign you in with no doubts.
+
+Then confirm that you have at least copy down the **`uuid`** (and accessable via `User#uuid`) or `id` (accessable via `User#sid` or `User#cid`) property of a user when they are signing in from Colorgy Core. A sample is as below:
+
+```ruby
+# /app/models/user.rb
+
+# ...
+
+  def self.from_colorgy(auth, signed_in_resource=nil)
+    # The uuid is copied down during creation!
+    user = where(:uuid => auth.info.uuid).first_or_create! do |user|
+      user.email = auth.info.email
+    end
+  end
+
+# ...
+```
+
+You might want your local user data to be updated automatically when the core data is. If so, add a **`refreshed_at`** column to your User model and let your application be able to determine whether a refresh is needed (comparing the `update_at` in SST and this column):
+
+```bash
+rails g migration add_refreshed_at_to_users refreshed_at:datetime
+rake db:migrate
+```
+
+Then just include `ColorgyDeviseSSOManager` in your ApplicationController and all the rest is done:
+
+```ruby
+# app/controllers/application_controller.rb
+
+class ApplicationController < ActionController::Base
+  include ColorgyDeviseSSOManager
+  include FlashMessageReporter
+end
+```
+
+_`FlashMessageReporter` is optional, include it if you want to relay flash messages from core to your app ._
+
+One last step: unlike URL of the core SSO server can be guessed by OmniAuth and Devise configurations, the **RSA public key** used to verify SST isn't. So you need to pass it in manually using an environment variable called **`CORE_RSA_PUBLIC_KEY`**. Put it in your `.env` or export it like this: `export CORE_RSA_PUBLIC_KEY='-----BEGIN PUBLIC KEY-----\nMIGfMA0GCSqGSIb3D ... P2QIDAQAB\n-----END PUBLIC KEY-----\n'`. Make sure it's accessible via `ENV['CORE_RSA_PUBLIC_KEY']` in your app.
+
+Now that users on your app will be signing in/out synchronizedly with Colorgy core, and is automatically reauthorized to get user's new data from core when updated.
+
+`ColorgyDeviseSSOManager` also provide two URL helper methods: `sign_out_url`, `logout_url` pointed to the core sign out URL. You can replace your orginal logout link (maybe `destroy_user_session_path`) with these. (Since it's an SSO, signing out of the core server means to sign out of your application too.)
+
+```ruby
+<%= link_to("Log Out", sign_out_url, method: :delete) %>
+```
+
+
 ## Development
 
 After checking out the repo, run `bin/setup` to install dependencies. Then, run `bin/console` for an interactive prompt that will allow you to experiment.
+
+The test suite can be run by executing `bundle exec rake`.
 
 To install this gem onto your local machine, run `bundle exec rake install`. To release a new version, update the version number in `version.rb`, and then run `bundle exec rake release` to create a git tag for the version, push git commits and tags, and push the `.gem` file to [rubygems.org](https://rubygems.org).
 
