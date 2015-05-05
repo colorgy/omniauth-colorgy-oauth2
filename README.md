@@ -129,12 +129,13 @@ _(Optional)_
 
 The Colorgy SSO system is implemented using **OAuth 2.0** as the authorization protocol and **Sign-on Status Tokens (SST)** as credential of the sign-on status of the user, achieving sign in and out seamlessly controlled by a central server.
 
-The **Sign-on Status Token (SST)** is stored in an cross-domain cookie (`_sst`) to represent the sign on status of the current user. SSTs are trully [JSON Web Tokens (JWT)](https://tools.ietf.org/html/draft-ietf-oauth-json-web-token) containing identification information, signed by a RSA private key. Clients (other services under this SSO system) will be able to decode and verify the infomation using a corresponding RSA public key, and make reasonable reactions according to the infomation it provided.
+The **Sign-on Status Token (SST)** is stored in an cross-domain cookie (`_sst`) to represent the sign on status of the current user. **SST**s are trully [JSON Web Tokens (JWT)](https://tools.ietf.org/html/draft-ietf-oauth-json-web-token) containing identification information, signed by a RSA private key. Clients (other services under this SSO system) will be able to decode and verify the infomation using a corresponding RSA public key, and make reasonable reactions (signs in or out the user, reauthorize from the server... etc.) according to the infomation it provided.
 
 This gem has implemented some solutions to cover certain use cases.
 
-
 ### Using Devise With Rails: `ColorgyDeviseSSOManager`
+
+_An `ActiveSupport::Concern` to drop into your `ActionController` directly without any configurations to enable SSO support, if you're using devise and omniauth already._
 
 > Limitations: since this tactic relys on sharing a cookie accross Colorgy core and your app, your app should be running on a subdomain of Colorgy core to make this work.
 
@@ -177,7 +178,9 @@ end
 
 _`FlashMessageReporter` is optional, include it if you want to relay flash messages from core to your app ._
 
-One last step: unlike URL of the core SSO server can be guessed by OmniAuth and Devise configurations, the **RSA public key** used to verify SST isn't. So you need to pass it in manually using an environment variable called **`CORE_RSA_PUBLIC_KEY`**. Put it in your `.env` or export it like this: `export CORE_RSA_PUBLIC_KEY='-----BEGIN PUBLIC KEY-----\nMIGfMA0GCSqGSIb3D ... P2QIDAQAB\n-----END PUBLIC KEY-----\n'`. Make sure it's accessible via `ENV['CORE_RSA_PUBLIC_KEY']` in your app.
+> This `ActiveSupport::Concern` is zero-configured since we can guess the URL of Core SSO by OmniAuth and Devise configurations, get the RSA public key automatically from the server, and use the User model's `uuid` (or `cid`, `sid`) and `refreshed_at` (or `synced_at`) by convention to perform certain actions like checking the user's identity or last refresh date.
+
+> You can also manually specify the RSA public key used to verify SSTs. Just pass it in using an environment variable called **`CORE_RSA_PUBLIC_KEY`**. Put it in your `.env` or export it like this: `export CORE_RSA_PUBLIC_KEY='-----BEGIN PUBLIC KEY-----\nMIGfMA0GCSqGSIb3D ... P2QIDAQAB\n-----END PUBLIC KEY-----\n'`. Make sure it's accessible via `ENV['CORE_RSA_PUBLIC_KEY']` in your app.
 
 Now that users on your app will be signing in/out synchronizedly with Colorgy core, and is automatically reauthorized to get user's new data from core when updated.
 

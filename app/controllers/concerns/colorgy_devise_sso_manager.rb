@@ -21,17 +21,21 @@ module ColorgyDeviseSSOManager
 
   # Getter of the core domain
   def core_domain
-    @@core_domain ||= URI.parse(Devise.omniauth_configs[:colorgy].options[:client_options][:site]).host
+    @@core_domain ||= URI.parse(core_url).host
   end
 
   # Getter of the core url
   def core_url
-    @@core_url ||= Devise.omniauth_configs[:colorgy].options[:client_options][:site]
+    @@core_url ||= if Devise.omniauth_configs[:colorgy].options[:client_options].is_a?(Hash)
+      Devise.omniauth_configs[:colorgy].options[:client_options][:site]
+    else
+      OmniAuth::Strategies::Colorgy.new(0).options.client_options.site
+    end
   end
 
   # Getter of the core rsa public key string
   def core_rsa_public_key_string
-    @@core_rsa_public_key_string ||= ENV['CORE_RSA_PUBLIC_KEY'].gsub(/\\n/, "\n") || Net::HTTP.get(core_domain, '/_rsa.pub')
+    @@core_rsa_public_key_string ||= (ENV['CORE_RSA_PUBLIC_KEY'] || Net::HTTP.get(core_domain, '/_rsa.pub')).gsub(/\\n/, "\n")
   end
 
   # Getter of the core rsa public key
