@@ -1,3 +1,5 @@
+require 'net/http'
+
 module ColorgyDeviseSSOManager
   extend ActiveSupport::Concern
 
@@ -35,7 +37,12 @@ module ColorgyDeviseSSOManager
 
   # Getter of the core rsa public key string
   def core_rsa_public_key_string
-    @@core_rsa_public_key_string ||= (ENV['CORE_RSA_PUBLIC_KEY'] || Net::HTTP.get(core_domain, '/_rsa.pub')).gsub(/\\n/, "\n")
+    if ENV['CORE_RSA_PUBLIC_KEY'].present?
+      ENV['CORE_RSA_PUBLIC_KEY'].gsub(/\\n/, "\n")
+    else
+      url = URI.parse("#{core_url}/_rsa.pub")
+      Net::HTTP.get(url)
+    end
   end
 
   # Getter of the core rsa public key
