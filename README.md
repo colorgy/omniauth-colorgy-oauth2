@@ -125,7 +125,7 @@ config.omniauth :colorgy, ENV['APP_ID'], ENV['APP_SECRET'],
 
 ## Single-Sign On/Off (SSO) Support
 
-_(Optional)_
+_(Optional, only if you want a single sing in/out status synced with Colorgy core.)_
 
 The Colorgy SSO system is implemented using **OAuth 2.0** as the authorization protocol and **Sign-on Status Tokens (SST)** as credential of the sign-on status of the user, achieving sign in and out seamlessly controlled by a central server.
 
@@ -163,6 +163,19 @@ You might want your local user data to be updated automatically when the core da
 ```bash
 rails g migration add_refreshed_at_to_users refreshed_at:datetime
 rake db:migrate
+```
+
+Make sure it is updated while each core sign in, usually in `app/models/user.rb`:
+
+```ruby
+def self.from_colorgy(auth)
+  # ...
+
+  user.refreshed_at = Time.now
+  user.save!
+
+  # ...
+end
 ```
 
 Then just include `ColorgyDeviseSSOManager` in your ApplicationController and all the rest is done:
