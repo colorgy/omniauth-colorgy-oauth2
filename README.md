@@ -203,6 +203,19 @@ Now that users on your app will be signing in/out synchronizedly with Colorgy co
 <%= link_to("Log Out", sign_out_url, method: :delete) %>
 ```
 
+If SSO functionality needs to be turned off temporary, call the `sso_off!` method at `before_filter` like this:
+
+```ruby
+class ApplicationController < ActionController::Base
+  # ...
+
+  before_filter :sso_off!
+
+  # ...
+end
+```
+
+The SSO functionality will be disabled automatically in testing environment (`Rails.env.test?`) by the way.
 
 ## Development
 

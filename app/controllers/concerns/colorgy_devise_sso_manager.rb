@@ -4,19 +4,36 @@ module ColorgyDeviseSSOManager
   extend ActiveSupport::Concern
 
   @@sst_verification_method = 'RS256'
+  @@sso_enabled = true
 
   included do
     before_filter :verify_sst
+    before_action :sign_out_if_needed
     helper_method :sign_out_url, :logout_url
   end
 
-  # Helpers to get the core sign-out URL
+  # Helper to get the core sign-out URL
   def sign_out_url
-    "#{core_url}/logout"
+    if @@sso_enabled
+      "#{core_url}/logout"
+    else
+      "#{root_path}?logout=true"
+    end
   end
 
   def logout_url
     sign_out_url
+  end
+
+  # Sign the user out if needed
+  def sign_out_if_needed
+    return unless !@@sso_enabled && params[:logout] == 'true'
+    sign_out :user
+  end
+
+  # Turn off SSO
+  def sso_off!
+    @@sso_enabled = false
   end
 
   private
@@ -66,6 +83,7 @@ module ColorgyDeviseSSOManager
   def verify_sst
     # Skip this on test and auth callbacks
     return if Rails.env.test?
+    return unless @@sso_enabled
     return if controller_name == 'omniauth_callbacks'
 
     # Get the sst string from cookie
