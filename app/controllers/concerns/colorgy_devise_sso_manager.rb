@@ -58,11 +58,12 @@ module ColorgyDeviseSSOManager
       ENV['CORE_RSA_PUBLIC_KEY'].gsub(/\\n/, "\n")
     else
       url = URI.parse("#{core_url}/_rsa.pub")
-      respond = Net::HTTP.get(url)
-      if respond.code == '301'
-        respond = Net::HTTP.get_response(URI.parse(respond.header['location']))
+      response = Net::HTTP.get_response(url)
+      if response.code == '301'
+        response = Net::HTTP.get_response(URI.parse(response.header['location']))
+        response.body
       else
-        respond
+        response.body
       end
     end
   end
