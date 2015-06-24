@@ -58,12 +58,19 @@ module ColorgyDeviseSSOManager
       ENV['CORE_RSA_PUBLIC_KEY'].gsub(/\\n/, "\n")
     else
       url = URI.parse("#{core_url}/_rsa.pub")
-      Net::HTTP.get(url)
+      respond = Net::HTTP.get(url)
+      if respond.code == '301'
+        respond = Net::HTTP.get_response(URI.parse(respond.header['location']))
+      else
+        respond
+      end
     end
   end
 
   # Getter of the core rsa public key
   def core_rsa_public_key
+    @@core_rsa_public_key ||= OpenSSL::PKey::RSA.new(core_rsa_public_key_string)
+  rescue
     @@core_rsa_public_key ||= OpenSSL::PKey::RSA.new(core_rsa_public_key_string)
   end
 
