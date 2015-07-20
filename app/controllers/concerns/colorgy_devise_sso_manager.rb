@@ -28,7 +28,7 @@ module ColorgyDeviseSSOManager
   # Sign the user out if needed
   def sign_out_if_needed
     return unless !@@sso_enabled && params[:logout] == 'true'
-    sign_out :user
+    sign_out_and_redirect :user
   end
 
   # Turn off SSO
